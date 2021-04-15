@@ -24,9 +24,9 @@ public class UGRectRingPipeline extends OpenCvPipeline {
     private int threshold = 15;
 
     //The position related to the screen
-    private double topRectWidthPercentage = 0.30;
+    private double topRectWidthPercentage = 0.50;
     private double topRectHeightPercentage = 0.55;
-    private double bottomRectWidthPercentage = 0.30;
+    private double bottomRectWidthPercentage = 0.50;
     private double bottomRectHeightPercentage = 0.65;
 
     //The width and height of the rectangles in terms of pixels

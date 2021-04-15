@@ -2,6 +2,7 @@
 package org.firstinspires.ftc.teamcode.robot;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -17,10 +18,9 @@ public class UGTeleop extends LinearOpMode {
     IntakeSubsystem intake = new IntakeSubsystem();
     ShooterSubsystem shooter = new ShooterSubsystem();
     ArmSubsystem arm = new ArmSubsystem();
-    UGRectDetector vision = new UGRectDetector();
     double speed = 1;
-    ElapsedTime runtime = new ElapsedTime();
-    boolean buttonPrev[] = {false, false, false, false, false, false}; //bumper_left, bumper_right, gamepad2_y, dpad_up
+    ElapsedTime flipTime = new ElapsedTime();
+    boolean buttonPrev[] = {false, false, false, false, false, false, false, false, false}; //bumper_left, bumper_right, gamepad2_y, dpad_up, b
     // TODO: fix those variable names
     //forward speed
     double ch3 = 0;
@@ -33,28 +33,30 @@ public class UGTeleop extends LinearOpMode {
     //manual or auto power adjustment
     boolean autoPower = true;
     boolean shooting = false;
-
+    boolean wobbleOpen = false;
     @Override
     public void runOpMode() {
         MecDrive drive = new MecDrive(hardwareMap);
-        intake.init(hardwareMap, this, "teleop");
+        intake.init(hardwareMap, this);
         shooter.init(hardwareMap);
         arm.init(hardwareMap);
-        vision.init(hardwareMap, "Webcam");
         telemetry.addData("Say", "Hello Driver");
         telemetry.update();
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
+        Trajectory traj = drive.trajectoryBuilder(new Pose2d())
+                .lineToSplineHeading(new Pose2d(-2, -12, 0))
+                .build();
+        intake.deploy();
         waitForStart();
 
         while (opModeIsActive()) {
             // ### Control speed
             if (gamepad1.b) {
-                speed = 0.3;
+                speed = 0.5;
             } else if (gamepad1.a) {
                 speed = 1;
             } else if (gamepad1.dpad_down) {
-                speed = 0.15;
+                speed = 0.3;
             }
 
             // ### both off
@@ -67,23 +69,30 @@ public class UGTeleop extends LinearOpMode {
             else if (gamepad2.x) {
                 shooter.turnOff();
                 intake.turnOn();
+                shooter.storePos();
+                arm.rotateBackward(true);
                 shooting = false;
             }
             // ### intake off shooter on
-            else if (gamepad2.b || shooting && !tripleShoot) {
-                shooter.turnOn();
-                intake.turnOff();
+            else if(buttonClick(gamepad2.b, 6)){
                 shooting = true;
+                flipTime.reset();
+                flipTime.startTime();
+                intake.turnOff();
+                shooter.shootPos();
+                arm.rotateForward();
+            }
+            if(flipTime.milliseconds()>350 && !tripleShoot && shooting){
+                shooter.turnOn();
             }
 
             //triple shoot
             if (buttonClick(gamepad2.y, 2)) {
                 tripleShoot = true;
                 shooter.restartTime();
-                //shooter.shooter.setPower(shooter.getPower()-0.06);
             }
             if (tripleShoot) {
-                tripleShoot = shooter.shoot(3);
+                tripleShoot = shooter.shoot();
             } else {
                 if (gamepad2.right_trigger > 0.6) {
                     shooter.trigger();
@@ -91,42 +100,46 @@ public class UGTeleop extends LinearOpMode {
                     shooter.neutral();
                 }
             }
-            if (buttonClick(gamepad2.dpad_up, 3)) {
-                autoPower = !autoPower;
+            if (buttonClick(gamepad2.dpad_left, 3)) {
+                shooter.setPower(shooter.getPower() - 100);
             }
-            /*
-            if(autoPower && !tripleShoot){
-                if(shooter.getBatteryVoltage()>13.9){
-                    shooter.setPower(0.85);
-                }
-                else if(shooter.getBatteryVoltage()>13.4){
-                    shooter.setPower(0.9);
-                }
-                else if(shooter.getBatteryVoltage()>12.9){
-                    shooter.setPower(0.95);
-                }
-                else{
-                    shooter.setPower(1);
-                }
-            }*/
+            if (buttonClick(gamepad2.dpad_right, 7)) {
+                shooter.setPower(shooter.getPower() + 100);
+            }
 
             if (buttonClick(gamepad2.right_bumper, 1)) {
-                shooter.setPower(shooter.getPower() + 0.025);
+                shooter.setPower(shooter.getPower() + 25);
             }
             if (buttonClick(gamepad2.left_bumper, 0)) {
-                shooter.setPower(shooter.getPower() - 0.025);
+                shooter.setPower(shooter.getPower() - 25);
             }
             if (buttonClick(gamepad1.x, 4)) {
-                arm.move(-70);
-            } else if (buttonClick(gamepad1.y, 5)) {
-                arm.move(-180);
+                drive.followTrajectory(traj);
             }
-            telemetry.addData("Rings", vision.getStack());
+            if(gamepad2.left_stick_y<-0.6){
+                arm.rotateBackward(true);
+            }
+            else if(gamepad2.left_stick_y>0.8){
+                arm.rotateForward();
+            }
+            else if(gamepad2.left_stick_y>0.4 && gamepad2.left_stick_y<0.8){
+                arm.rotateBackward(false);
+            }
+            if(buttonClick(gamepad2.left_trigger > 0.6, 8)){
+                if(wobbleOpen){
+                    arm.close();
+                }
+                else{
+                    arm.open();
+                }
+                wobbleOpen = !wobbleOpen;
+            }
             telemetry.addData("Power", shooter.getPower());
             telemetry.addData("Voltage", shooter.getBatteryVoltage());
             telemetry.update();
 
             // ### Drive the robot
+            ch4 = gamepad1.right_bumper ? -0.9 : gamepad1.left_bumper ? 0.9 : 0;
             /*
             ch3 = gamepad1.left_stick_y > 0.4 ? 0.9 : gamepad1.left_stick_y < -0.4 ? -0.9 : 0;
             ch4 = gamepad1.right_bumper ? -0.9 : gamepad1.left_bumper ? 0.9 : 0;
@@ -137,9 +150,9 @@ public class UGTeleop extends LinearOpMode {
             robot.rightDriveBack.setPower((ch3 - ch1 + ch4) * speed);*/
             drive.setWeightedDrivePower(
                     new Pose2d(
-                            -gamepad1.left_stick_y,
-                            -gamepad1.left_stick_x,
-                            -gamepad1.right_stick_x
+                            -gamepad1.left_stick_y*speed,
+                            ch4*speed,
+                            -gamepad1.right_stick_x*speed
                     )
             );
 

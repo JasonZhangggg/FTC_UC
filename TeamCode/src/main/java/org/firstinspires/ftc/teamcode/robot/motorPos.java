@@ -47,23 +47,8 @@ public class motorPos extends LinearOpMode {
         arm.init(hardwareMap);
 
         waitForStart();
-        while (opModeIsActive()) {
-            if (singleClick(gamepad1.right_bumper, 0)) {
-                arm.setPos(arm.getPos()+20);
-            } else if (singleClick(gamepad1.left_bumper, 1)) {
-                arm.setPos(arm.getPos()-20);
-            }
-            telemetry.addData("motor", arm.getPos());
-
-            arm.move(arm.getPos());
-            sleep(100);
-            telemetry.update();
-
-
-
         }
-    }
-    public boolean singleClick(boolean cur, int loc){
+        public boolean singleClick(boolean cur, int loc){
         boolean temp = cur && !prev[loc];
         prev[loc] = cur;
         return temp;
