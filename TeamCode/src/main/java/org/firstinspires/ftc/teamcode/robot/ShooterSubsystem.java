@@ -16,7 +16,7 @@ public class ShooterSubsystem {
     public Servo flip = null;
     int count = 0;
     HardwareMap hwMap = null;
-    double power = 1500;
+    double power = 1950;
     public ElapsedTime runtime = new ElapsedTime();
 
     public void init(HardwareMap ahwMap) {
@@ -26,19 +26,22 @@ public class ShooterSubsystem {
 
         pusher = hwMap.get(Servo.class, "pusher");
         flip = hwMap.get(Servo.class, "flip");
-        shooter1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        //shooter1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         neutral();
     }
 
     public void turnOn() {
-        shooter1.setPower(power/2000.0);
+        //shooter1.setPower(power/2000.0);
+        shooter1.setVelocity(power);
         shooter2.setVelocity(power);
     }
 
     public void turnOff() {
-        shooter1.setPower(0);
+        //shooter1.setPower(0);
+        shooter1.setVelocity(0);
         shooter2.setVelocity(0);
     }
 
@@ -49,7 +52,7 @@ public class ShooterSubsystem {
         pusher.setPosition(0.465);
     }
 
-    public void shootPos(){flip.setPosition(0.683);}
+    public void shootPos(){flip.setPosition(0.69);}
     public void storePos(){flip.setPosition(0.98);}
     public boolean shoot() {
         double mil = runtime.milliseconds();

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.robot;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -34,8 +35,18 @@ public class IntakeSubsystem {
         m1.setPower(0.8);
     }
 
+    public void turnOnSlow(){
+        m0.setPower(0.5);
+        m1.setPower(0.5);
+    }
     public void turnOff() {
         m0.setPower(0);
         m1.setPower(0);
+    }
+    public void setReverse(){
+        m0.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+    public void unsetReverse(){
+        m0.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 }
